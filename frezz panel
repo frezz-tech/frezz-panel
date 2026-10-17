@@ -1,0 +1,119 @@
+-- Small cosmetic toggle GUI with title, slightly transparent (visual only)
+local Players = game:GetService("Players")
+local UserInputService = game:GetService("UserInputService")
+local TweenService = game:GetService("TweenService")
+
+local parent = (gethui and gethui()) or Players.LocalPlayer:WaitForChild("PlayerGui")
+
+local old = parent:FindFirstChild("ToggleGui")
+if old then old:Destroy() end
+
+local gui = Instance.new("ScreenGui")
+gui.Name = "ToggleGui"
+gui.ResetOnSpawn = false
+gui.Parent = parent
+
+local bg = Instance.new("Frame")
+bg.Size = UDim2.fromOffset(212, 176)
+bg.Position = UDim2.new(0.5, -106, 0.5, -88)
+bg.BackgroundColor3 = Color3.fromRGB(18, 18, 26)
+bg.BackgroundTransparency = 0.35
+bg.BorderSizePixel = 0
+bg.Parent = gui
+Instance.new("UICorner", bg).CornerRadius = UDim.new(0, 12)
+
+local stroke = Instance.new("UIStroke")
+stroke.Color = Color3.fromRGB(45, 80, 190)
+stroke.Thickness = 1.5
+stroke.Transparency = 0.2
+stroke.Parent = bg
+
+local title = Instance.new("TextLabel")
+title.Size = UDim2.new(1, -16, 0, 26)
+title.Position = UDim2.fromOffset(8, 4)
+title.BackgroundTransparency = 1
+title.Text = "Trade Freeze Panel"
+title.TextColor3 = Color3.new(1, 1, 1)
+title.Font = Enum.Font.GothamBold
+title.TextSize = 14
+title.Parent = bg
+
+local function makeRow(text, y)
+	local row = Instance.new("Frame")
+	row.Size = UDim2.fromOffset(196, 40)
+	row.Position = UDim2.fromOffset(8, y)
+	row.BackgroundColor3 = Color3.new(1, 1, 1)
+	row.BackgroundTransparency = 0.15
+	row.BorderSizePixel = 0
+	row.Parent = bg
+	Instance.new("UICorner", row).CornerRadius = UDim.new(0, 9)
+
+	local grad = Instance.new("UIGradient")
+	grad.Color = ColorSequence.new({
+		ColorSequenceKeypoint.new(0, Color3.fromRGB(10, 30, 100)),
+		ColorSequenceKeypoint.new(0.5, Color3.fromRGB(25, 70, 230)),
+		ColorSequenceKeypoint.new(1, Color3.fromRGB(10, 30, 100)),
+	})
+	grad.Parent = row
+
+	local label = Instance.new("TextLabel")
+	label.Size = UDim2.new(1, -62, 1, 0)
+	label.Position = UDim2.fromOffset(12, 0)
+	label.BackgroundTransparency = 1
+	label.Text = text
+	label.TextColor3 = Color3.new(1, 1, 1)
+	label.Font = Enum.Font.GothamMedium
+	label.TextSize = 13
+	label.TextXAlignment = Enum.TextXAlignment.Left
+	label.Parent = row
+
+	local track = Instance.new("TextButton")
+	track.Size = UDim2.fromOffset(36, 20)
+	track.Position = UDim2.new(1, -46, 0.5, -10)
+	track.BackgroundColor3 = Color3.fromRGB(30, 30, 40)
+	track.Text = ""
+	track.AutoButtonColor = false
+	track.Parent = row
+	Instance.new("UICorner", track).CornerRadius = UDim.new(1, 0)
+
+	local knob = Instance.new("Frame")
+	knob.Size = UDim2.fromOffset(16, 16)
+	knob.Position = UDim2.fromOffset(2, 2)
+	knob.BackgroundColor3 = Color3.fromRGB(215, 215, 235)
+	knob.BorderSizePixel = 0
+	knob.Parent = track
+	Instance.new("UICorner", knob).CornerRadius = UDim.new(1, 0)
+
+	local on = false
+	track.MouseButton1Click:Connect(function()
+		on = not on
+		local info = TweenInfo.new(0.15, Enum.EasingStyle.Quad)
+		TweenService:Create(knob, info, {
+			Position = on and UDim2.fromOffset(18, 2) or UDim2.fromOffset(2, 2),
+		}):Play()
+		TweenService:Create(track, info, {
+			BackgroundColor3 = on and Color3.fromRGB(60, 200, 110) or Color3.fromRGB(30, 30, 40),
+		}):Play()
+	end)
+end
+
+makeRow("Freeze Trade", 34)
+makeRow("Force Accept", 80)
+makeRow("Auto Add Items", 126)
+
+-- Dragging (grab the background or title)
+local dragging, dragStart, startPos
+bg.InputBegan:Connect(function(input)
+	if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+		dragging, dragStart, startPos = true, input.Position, bg.Position
+		input.Changed:Connect(function()
+			if input.UserInputState == Enum.UserInputState.End then dragging = false end
+		end)
+	end
+end)
+UserInputService.InputChanged:Connect(function(input)
+	if dragging and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
+		local d = input.Position - dragStart
+		bg.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + d.X, startPos.Y.Scale, startPos.Y.Offset + d.Y)
+	end
+end)
